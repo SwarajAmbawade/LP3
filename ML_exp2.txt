@@ -1,0 +1,277 @@
+Classify the email using the binary classification method. Email Spam detection has two 
+states: a) Normal State – Not Spam, b) Abnormal State – Spam. Use K-Nearest Neighbors and 
+Support Vector Machine for classification. Analyze their performance. 
+Dataset link: The emails.csv dataset on the Kaggle 
+https://www.kaggle.com/datasets/balaka18/email-spam-classification-dataset-csv
+
+
+#Swaraj Ambawade
+#Import Libraries
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    roc_curve,
+    auc,
+    precision_recall_curve
+)
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+
+#Load Dataset
+df = pd.read_csv("emails.csv")   # Change path if needed
+
+df.head()
+
+
+
+#Data Preprocessing
+print("Dataset Shape :", df.shape)
+
+# Features and Target
+X = df.drop(columns=["Email No.", "Prediction"])
+y = df["Prediction"]
+
+# Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+
+
+#Create Models
+knn = KNeighborsClassifier(n_neighbors=5)
+
+svm = SVC(
+    kernel='linear',
+    probability=True,
+    random_state=42
+)
+
+
+
+
+
+#Train Models
+knn.fit(X_train, y_train)
+svm.fit(X_train, y_train)
+
+
+
+
+#Prediction
+y_pred_knn = knn.predict(X_test)
+y_pred_svm = svm.predict(X_test)
+
+
+
+
+#Evaluation Function
+def evaluate_model(y_true, y_pred, model_name):
+
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+
+    print(f"\n----- {model_name} -----")
+    print("Accuracy :", accuracy)
+    print("Precision:", precision)
+    print("Recall   :", recall)
+    print("F1 Score :", f1)
+
+    return [accuracy, precision, recall, f1]
+
+
+
+
+
+
+#Evaluate Models
+knn_metrics = evaluate_model(
+    y_test,
+    y_pred_knn,
+    "KNN"
+)
+
+svm_metrics = evaluate_model(
+    y_test,
+    y_pred_svm,
+    "SVM"
+)
+
+
+
+
+
+
+
+
+
+#Confusion Matrix
+def plot_confusion(y_true, y_pred, title):
+
+    cm = confusion_matrix(y_true, y_pred)
+
+    plt.figure(figsize=(5,4))
+
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=["Not Spam","Spam"],
+        yticklabels=["Not Spam","Spam"]
+    )
+
+    plt.title(title)
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+
+    plt.show()
+
+
+
+
+
+
+
+
+#Display Confusion Matrix
+plot_confusion(
+    y_test,
+    y_pred_knn,
+    "KNN Confusion Matrix"
+)
+
+plot_confusion(
+    y_test,
+    y_pred_svm,
+    "SVM Confusion Matrix"
+)
+
+
+
+
+
+
+
+#ROC Curve & Precision-Recall Curve
+y_score_knn = knn.predict_proba(X_test)[:,1]
+y_score_svm = svm.predict_proba(X_test)[:,1]
+
+# ROC
+fpr_knn, tpr_knn, _ = roc_curve(y_test, y_score_knn)
+fpr_svm, tpr_svm, _ = roc_curve(y_test, y_score_svm)
+
+auc_knn = auc(fpr_knn, tpr_knn)
+auc_svm = auc(fpr_svm, tpr_svm)
+
+plt.figure(figsize=(12,5))
+
+plt.subplot(1,2,1)
+
+plt.plot(fpr_knn, tpr_knn,
+         label=f'KNN AUC={auc_knn:.2f}')
+
+plt.plot(fpr_svm, tpr_svm,
+         label=f'SVM AUC={auc_svm:.2f}')
+
+plt.plot([0,1],[0,1],'k--')
+
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve")
+plt.legend()
+
+# Precision Recall Curve
+
+precision_knn, recall_knn, _ = precision_recall_curve(
+    y_test,
+    y_score_knn
+)
+
+precision_svm, recall_svm, _ = precision_recall_curve(
+    y_test,
+    y_score_svm
+)
+
+plt.subplot(1,2,2)
+
+plt.plot(recall_knn,
+         precision_knn,
+         label="KNN")
+
+plt.plot(recall_svm,
+         precision_svm,
+         label="SVM")
+
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title("Precision Recall Curve")
+plt.legend()
+
+plt.show()
+
+
+
+
+
+
+
+
+#Performance Comparison
+metrics = pd.DataFrame(
+    [knn_metrics, svm_metrics],
+    columns=[
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1 Score"
+    ],
+    index=[
+        "KNN",
+        "SVM"
+    ]
+)
+
+metrics
+
+
+
+
+
+#Bar Graph
+metrics.plot(
+    kind="bar",
+    figsize=(8,5)
+)
+
+plt.title("Performance Comparison")
+
+plt.ylabel("Score")
+
+plt.xticks(rotation=0)
+
+plt.show()
+
+
+
+
+
+

@@ -1,0 +1,206 @@
+Implement K-Means clustering/ hierarchical clustering on sales_data_sample.csv dataset.  
+Determine the number of clusters using the elbow method. 
+Dataset link : https://www.kaggle.com/datasets/kyanyoga/sample-sales-data
+
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+
+
+
+
+df = pd.read_csv("sales_data_sample.csv", encoding="unicode_escape")
+
+df.head()
+
+
+
+
+
+
+
+print("Dataset Shape:")
+print(df.shape)
+
+print("\nDataset Information:")
+df.info()
+
+print("\nStatistical Summary:")
+display(df.describe())
+
+print("\nColumn Names:")
+print(df.columns)
+
+
+
+
+
+
+
+
+print(df.isnull().sum())
+
+
+
+
+
+
+
+# Data Preprocessing
+# Select Numerical Features
+features = df[
+    [
+        "QUANTITYORDERED",
+        "PRICEEACH",
+        "SALES",
+        "ORDERNUMBER"
+    ]
+].dropna()
+
+features.head()
+
+
+
+
+
+
+
+
+
+# Standardize the Data
+scaler = StandardScaler()
+
+X_scaled = scaler.fit_transform(features)
+
+print("Data shape after scaling:", X_scaled.shape)
+
+
+
+
+
+
+
+
+# Part A — K-Means Clustering
+# Elbow Method
+inertia = []
+
+K = range(1, 11)
+
+for k in K:
+    model = KMeans(
+        n_clusters=k,
+        random_state=42,
+        n_init=10
+    )
+    
+    model.fit(X_scaled)
+    inertia.append(model.inertia_)
+
+
+
+
+
+
+
+# Plot the Elbow Curve
+plt.figure(figsize=(8, 5))
+
+plt.plot(K, inertia, marker='o')
+
+plt.title("Elbow Method - Optimal K")
+plt.xlabel("Number of Clusters (K)")
+plt.ylabel("Inertia (Within-Cluster Sum of Squares)")
+
+plt.grid(True)
+
+plt.show()
+
+
+
+
+
+
+
+
+# Part B — Apply K-Means
+# Train the K-Means Model
+kmeans = KMeans(
+    n_clusters=4,
+    random_state=42,
+    n_init=10
+)
+
+df["Cluster"] = kmeans.fit_predict(X_scaled)
+
+
+
+
+
+
+
+# Display Cluster Centers
+print("Cluster Centers:\n")
+
+print(kmeans.cluster_centers_)
+
+
+
+
+
+
+# Check Number of Points in Each Cluster
+print(df["Cluster"].value_counts().sort_index())
+
+
+
+
+# K-Means Visualization
+plt.figure(figsize=(10, 6))
+
+sns.scatterplot(
+    x="PRICEEACH",
+    y="SALES",
+    hue="Cluster",
+    data=df,
+    palette="viridis"
+)
+
+plt.title("K-Means Clustering Visualization")
+
+plt.xlabel("Price Each")
+plt.ylabel("Sales")
+
+plt.legend(title="Cluster")
+
+plt.show()
+
+
+
+
+
+
+
+
+# Cluster Summary
+cluster_summary = df.groupby("Cluster")[
+    ["SALES", "PRICEEACH", "QUANTITYORDERED"]
+].mean()
+
+print("Cluster Summary:\n")
+
+display(cluster_summary)
+
+
+
+
+
+
+

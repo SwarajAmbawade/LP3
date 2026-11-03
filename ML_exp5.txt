@@ -1,0 +1,233 @@
+Implement K-Nearest Neighbors algorithm on diabetes.csv dataset. Compute confusion 
+matrix, accuracy, error rate, precision and recall on the given dataset. 
+Dataset link : https://www.kaggle.com/datasets/abdallamahgoub/diabetes 
+
+
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import (
+    confusion_matrix,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
+
+
+
+
+
+# Load dataset
+
+df = pd.read_csv("diabetes.csv")
+
+# Display first 5 rows
+
+df.head()
+
+
+
+
+
+
+# Display basic information
+
+print(df.info())
+
+print(df.describe())
+
+
+
+
+
+
+# Check for missing values
+
+print(df.isnull().sum())
+
+
+
+
+
+
+
+# Separate features (X) and target (y)
+
+X = df.drop('Outcome', axis=1)
+
+y = df['Outcome']
+
+
+
+
+
+
+
+
+
+# Scale features
+
+scaler = StandardScaler()
+
+X_scaled = scaler.fit_transform(X)
+
+# Split dataset
+# 80% Training
+# 20% Testing
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+
+
+
+
+
+
+
+sns.countplot(x='Outcome', data=df)
+
+plt.title("Distribution of Diabetic vs Non-Diabetic")
+
+plt.xlabel("Outcome (0 = Non-Diabetic, 1 = Diabetic)")
+
+plt.ylabel("Count")
+
+plt.show()
+
+
+
+
+
+
+# Choose number of neighbors
+k = 5
+
+# Initialize KNN model
+knn = KNeighborsClassifier(n_neighbors=k)
+
+# Train the model
+knn.fit(X_train, y_train)
+
+
+# Predict on test data
+y_pred = knn.predict(X_test)
+
+
+
+
+
+
+
+
+
+
+# Generate confusion matrix
+
+cm = confusion_matrix(y_test, y_pred)
+
+
+# Display confusion matrix
+
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt='d',
+    cmap='Blues'
+)
+
+plt.title("Confusion Matrix")
+
+plt.xlabel("Predicted")
+
+plt.ylabel("Actual")
+
+plt.show()
+
+
+
+
+
+# Calculate Accuracy
+
+accuracy = accuracy_score(y_test, y_pred)
+
+# Calculate Error Rate
+error_rate = 1 - accuracy
+
+# Calculate Precision
+precision = precision_score(y_test, y_pred)
+
+# Calculate Recall
+recall = recall_score(y_test, y_pred)
+
+# Calculate F1 Score
+f1 = f1_score(y_test, y_pred)
+
+# Display results
+print("Accuracy:", round(accuracy, 4))
+print("Error Rate:", round(error_rate, 4))
+print("Precision:", round(precision, 4))
+print("Recall:", round(recall, 4))
+print("F1-Score:", round(f1, 4))
+
+
+
+
+
+
+error = []
+
+for i in range(1, 21):
+    # Create KNN model with current K value
+    knn = KNeighborsClassifier(n_neighbors=i)
+
+    # Train model
+    knn.fit(X_train, y_train)
+
+    # Predict
+    pred_i = knn.predict(X_test)
+
+    # Calculate error
+    error.append(np.mean(pred_i != y_test))
+
+
+
+
+
+
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    range(1, 21),
+    error,
+    marker='o',
+    color='blue'
+)
+
+plt.title('Error Rate vs K Value')
+plt.xlabel('K Value')
+plt.ylabel('Mean Error')
+plt.show()
+
+
+
+
+
+
+
+
+

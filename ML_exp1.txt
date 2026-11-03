@@ -1,0 +1,154 @@
+Predict the price of the Uber ride from a given pickup point to the agreed drop-off location. 
+Perform following tasks: 
+1.  Pre-process the dataset. 
+2.  Identify outliers. 
+3.  Check the correlation. 
+4.  Implement linear regression and random forest regression models. 
+5.  Evaluate the models and compare their respective scores like R2, RMSE, etc. 
+Dataset link: https://www.kaggle.com/datasets/yasserh/uber-fares-dataset 
+
+
+
+#swaraj
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+
+
+df = pd.read_csv('uber.csv')
+print("Dataset head:")
+print(df.head())
+
+
+
+
+print("\nMissingvaluespercolumn:")
+print(df.isnull().sum())
+
+
+
+#Droprows with missingvaluesifany
+df =df.dropna()
+#Feature engineering:Convertdatetimetousefulfeatures
+df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
+df['hour'] = df['pickup_datetime'].dt.hour
+df['dayofweek']= df['pickup_datetime'].dt.dayofweek
+
+
+
+#Calculate haversinedistancebetweenpickupanddropoff
+def haversine(lat1,lon1,lat2,lon2):
+# convertdecimaldegreestoradians
+    lat1, lon1, lat2,lon2= map(np.radians, [lat1, lon1, lat2, lon2])
+    dlat= lat2-lat1
+    dlon= lon2-lon1
+    a =np.sin(dlat/2)**2+ np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2)**2
+    c =2 *np.arcsin(np.sqrt(a))
+    r =6371 #Radiusofearthinkilometers
+    return c * r
+df['distance_km'] = haversine(df['pickup_latitude'], df['pickup_longitude'],
+df['dropoff_latitude'], df['dropoff_longitude'])
+
+
+
+
+ # Remove entries with zero or near-zero distance or fare (likely errors)
+df = df[(df['distance_km'] > 0.01) & (df['fare_amount'] > 0)]
+print(f"\nData shape after cleaning: {df.shape}")
+
+
+
+
+
+# 3. Outlier detection- visualize fare and distance
+plt.figure(figsize=(12,5))
+
+plt.subplot(1,2,1)
+sns.boxplot(x=df['fare_amount'])
+plt.title("Fare Amount Distribution")
+
+plt.subplot(1,2,2)
+sns.boxplot(x=df['distance_km'])
+plt.title("Distance Distribution (km)")
+
+plt.show()
+
+fare_99 = df['fare_amount'].quantile(0.99)
+dist_99 = df['distance_km'].quantile(0.99)
+
+df = df[(df['fare_amount'] <= fare_99) & (df['distance_km'] <= dist_99)]
+print(f"\nData shape after removing outliers: {df.shape}")
+
+
+
+
+
+# 4. Correlation heatmap
+plt.figure(figsize=(8,6))
+sns.heatmap(df[['fare_amount', 'distance_km', 'hour', 'dayofweek']].corr(),
+    annot=True, cmap='coolwarm')
+plt.title("Feature Correlation")
+plt.show()
+
+
+
+
+
+
+# 5. Model preparation
+features = ['distance_km', 'hour', 'dayofweek']
+X = df[features]
+y = df['fare_amount']
+
+
+
+
+ # Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,
+    random_state=42)
+# 6. Linear Regression model
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+y_pred_lr = lr.predict(X_test)
+
+
+
+
+ # 7. Random Forest Regression model
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+y_pred_rf = rf.predict(X_test)
+
+
+
+
+# 8. Evaluation function
+def evaluate(y_true, y_pred, model_name):
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2 = r2_score(y_true, y_pred)
+    print(f"{model_name}- RMSE: {rmse:.2f}, R2: {r2:.4f}")
+evaluate(y_test, y_pred_lr, "Linear Regression")
+evaluate(y_test, y_pred_rf, "Random Forest")
+
+
+
+ # 9. Visualize predictions vs actual for Random Forest (best model expected)
+plt.figure(figsize=(8,6))
+plt.scatter(y_test, y_pred_rf, alpha=0.3)
+plt.xlabel("Actual Fare")
+plt.ylabel("Predicted Fare")
+plt.title("Random Forest Regression: Actual vs Predicted Fare")
+plt.plot([0, y_test.max()], [0, y_test.max()], 'r--') # diagonal line
+plt.show()
+
+
+
+

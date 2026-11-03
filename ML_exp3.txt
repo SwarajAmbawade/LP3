@@ -1,0 +1,244 @@
+Given a bank customer, build a neural network-based classifier that can determine whether 
+they will leave or not in the next 6 months. 
+Dataset Description: The case study is from an open-source dataset from Kaggle. 
+The dataset contains 10,000 sample points with 14 distinct features such as 
+CustomerId, CreditScore, Geography, Gender, Age, Tenure, Balance, etc. 
+Link to the Kaggle project: 
+https://www.kaggle.com/barelydedicated/bank-customer-churn-modeling  
+Perform following steps: 
+1. Read the dataset. 
+2. Distinguish the feature and target set and divide the data set into training and test sets. 
+3. Normalize the train and test data.  
+4. Initialize and build the model. Identify the points of improvement and implement the same.  
+5. Print the accuracy score and confusion matrix (5 points).
+
+
+
+!pip install tensorflow
+
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import confusion_matrix, accuracy_score
+
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+
+
+
+# Load dataset
+dataset = pd.read_csv("Churn_Modelling.csv")
+
+# Display first 5 rows
+dataset.head()
+
+
+
+
+
+X = dataset.iloc[:, 3:-1].values
+y = dataset.iloc[:, -1].values
+
+print(X.shape)
+print(y.shape)
+
+
+
+
+
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+
+ct = ColumnTransformer(
+    transformers=[('encoder', OneHotEncoder(), [1])],
+    remainder='passthrough'
+)
+
+X = np.array(ct.fit_transform(X))
+
+
+
+
+
+
+le = LabelEncoder()
+X[:,4] = le.fit_transform(X[:,4])
+
+
+
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=0
+)
+
+
+
+
+
+
+sc = StandardScaler()
+
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+
+
+
+
+
+ann = Sequential()
+
+# First Hidden Layer
+ann.add(Dense(units=6, activation='relu'))
+
+# Second Hidden Layer
+ann.add(Dense(units=6, activation='relu'))
+
+# Output Layer
+ann.add(Dense(units=1, activation='sigmoid'))
+
+
+
+
+
+
+ann.compile(
+    optimizer='adam',
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+
+
+
+
+
+
+history = ann.fit(
+    X_train,
+    y_train,
+    batch_size=32,
+    epochs=100,
+    verbose=1
+)
+
+
+
+
+
+
+y_pred = ann.predict(X_test)
+
+y_pred = (y_pred > 0.5)
+
+
+
+
+
+
+
+cm = confusion_matrix(y_test, y_pred)
+
+print("Confusion Matrix:")
+print(cm)
+
+accuracy = accuracy_score(y_test, y_pred)
+
+print("\nAccuracy Score:", accuracy)
+
+
+
+
+
+
+
+plt.plot(history.history['accuracy'])
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.grid(True)
+plt.show()
+
+
+
+
+
+plt.plot(history.history['loss'])
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.grid(True)
+plt.show()
+
+
+
+
+
+
+
+from tensorflow.keras.layers import Dropout
+
+improved_ann = Sequential()
+
+improved_ann.add(Dense(12, activation='relu'))
+improved_ann.add(Dropout(0.2))
+
+improved_ann.add(Dense(12, activation='relu'))
+improved_ann.add(Dropout(0.2))
+
+improved_ann.add(Dense(1, activation='sigmoid'))
+
+improved_ann.compile(
+    optimizer='adam',
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+history2 = improved_ann.fit(
+    X_train,
+    y_train,
+    batch_size=32,
+    epochs=150,
+    verbose=1
+)
+
+
+
+
+
+
+y_pred2 = improved_ann.predict(X_test)
+y_pred2 = (y_pred2 > 0.5)
+
+cm2 = confusion_matrix(y_test, y_pred2)
+acc2 = accuracy_score(y_test, y_pred2)
+
+print("Improved Model Confusion Matrix:")
+print(cm2)
+
+print("\nImproved Model Accuracy:", acc2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
