@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+
+contract Bank {
+    address private accOwner;
+    uint256 balance = 0;
+
+    constructor() {
+        accOwner = msg.sender;
+    }
+
+    function Deposit() public payable {
+        require(accOwner == msg.sender, "You are not an account owner!");
+        require(msg.value > 0, "Amount should be greater than 0.");
+
+        balance += msg.value;
+    }
+
+    function Withdraw(uint256 amount) public {
+    require(accOwner == msg.sender, "You are not an account owner!");
+    require(amount > 0, "Amount must be greater than 0.");
+    require(amount <= balance, "Insufficient balance!");
+
+    balance -= amount;
+
+    (bool success, ) = payable(msg.sender).call{value: amount}("");
+    require(success, "ETH transfer failed!");
+    }
+
+    function showBalance() public view returns (uint256) {
+        require(accOwner == msg.sender, "You are not an account owner!");
+        return balance;
+    }
+}
+
+
+
+
+
+//This code gives, input boxes to all
+
+ // SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+
+contract Bank {
+    address private accOwner;
+    uint256 balance = 0;
+
+    constructor() {
+        accOwner = msg.sender;
+    }
+
+    function Deposit(uint256 amount) public payable {
+    require(accOwner == msg.sender, "You are not an account owner!");
+    require(amount > 0, "Amount must be greater than 0.");
+    require(msg.value == amount, "Amount mismatch!");
+
+    balance += msg.value;
+    }
+
+    function Withdraw(uint256 amount) public {
+    require(accOwner == msg.sender, "You are not an account owner!");
+    require(amount > 0, "Amount must be greater than 0.");
+    require(amount <= balance, "Insufficient balance!");
+
+    balance -= amount;
+
+    (bool success, ) = payable(msg.sender).call{value: amount}("");
+    require(success, "ETH transfer failed!");
+    }
+
+    function showBalance() public view returns (uint256) {
+        require(accOwner == msg.sender, "You are not an account owner!");
+        return balance;
+    }
+}
+
