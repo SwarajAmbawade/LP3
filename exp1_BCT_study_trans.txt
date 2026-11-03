@@ -1,0 +1,19 @@
+This includes all from login to everything.
+firstly:
+google signup:
+Swaraj78600@gmail.com
+pass : P21
+
+then download metamask chrome extension. 
+open it 
+pass, Swarajlastdsixdigits
+
+
+then wallets your wallet is already created
+ 
+
+you have two accounts, both having there own wallets. 
+
+use sepolia test network to send the ETH
+
+and use etherscan website to study the transaction. 
